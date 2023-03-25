@@ -1,18 +1,23 @@
 package com.devsuperior.ds_catalog.servicies;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.devsuperior.ds_catalog.dto.CategoryDTO;
 import com.devsuperior.ds_catalog.entities.Category;
 import com.devsuperior.ds_catalog.repository.CategoryRepository;
+import com.devsuperior.ds_catalog.servicies.exception.DataBaseException;
 import com.devsuperior.ds_catalog.servicies.exception.ResourceNotFoundException;
 
 
@@ -23,9 +28,9 @@ public class CategoryService {
 	private CategoryRepository repository;
 	
 	@Transactional(readOnly = true)
-	public List<CategoryDTO> findAll(){
-		List<Category> list = repository.findAll();
-		return list.stream().map(x -> new CategoryDTO(x)).collect(Collectors.toList());
+	public Page<CategoryDTO> findAllPaged(PageRequest pageRequest){
+		Page<Category> list = repository.findAll(pageRequest);
+		return list.map(x -> new CategoryDTO(x));
 	}
 
 	@Transactional(readOnly = true)
@@ -55,4 +60,16 @@ public class CategoryService {
 	}
 		
  }
+
+	public void delete(Long id) {
+		try {
+			repository.deleteById(id);
+		} catch (EmptyResultDataAccessException e) {
+			throw new ResourceNotFoundException("not found id"+ id);
+		}
+		  catch (DataIntegrityViolationException e) {
+			  throw new DataBaseException("Intergrity violation");
+		  }
+		
+	}
 }
